@@ -1,0 +1,137 @@
+# Sistemas de Recuperación y Generación Aumentada (RAG)
+
+## Introducción a los Sistemas RAG
+
+Los sistemas de Recuperación y Generación Aumentada (RAG, por sus siglas en inglés) representan una evolución significativa en el campo de la inteligencia artificial y el procesamiento del lenguaje natural. Estos sistemas combinan dos capacidades fundamentales: la recuperación de información relevante de bases de conocimiento y la generación de texto coherente mediante modelos de lenguaje.
+
+La arquitectura básica de un sistema RAG consta de tres componentes principales: un módulo de recuperación que busca información relevante, un módulo de generación que produce respuestas basadas en el contexto recuperado, y un mecanismo de integración que combina ambos procesos de manera efectiva.
+
+## Procesamiento de Documentos
+
+### Chunking de Documentos
+
+El chunking es el proceso de dividir documentos extensos en fragmentos más manejables. Esta técnica es fundamental para optimizar tanto la recuperación de información como el procesamiento por modelos de lenguaje que tienen límites en la longitud de entrada.
+
+Existen varias estrategias de chunking. El chunking fijo divide el texto en segmentos de tamaño predeterminado, típicamente medido en tokens o caracteres. El chunking semántico, por otro lado, respeta los límites naturales del contenido, como párrafos o secciones temáticas.
+
+El chunking jerárquico es una técnica avanzada que preserva la estructura del documento original. Este método identifica títulos, subtítulos y secciones, manteniendo las relaciones jerárquicas entre ellos. La ventaja principal es que permite recuperar contexto más rico y relevante durante las búsquedas.
+
+### Generación de Embeddings
+
+Los embeddings son representaciones vectoriales densas de texto que capturan significado semántico. En el contexto de RAG, cada chunk de documento se transforma en un vector numérico de dimensión fija, típicamente entre 384 y 1536 dimensiones.
+
+Los modelos populares para generar embeddings incluyen sentence-transformers de Hugging Face, como all-MiniLM-L6-v2 y bge-base-en-v1.5. Estos modelos han sido entrenados específicamente para capturar similitud semántica entre textos.
+
+La calidad de los embeddings es crucial para el rendimiento del sistema RAG. Embeddings de alta calidad permiten recuperar información relevante incluso cuando las palabras exactas no coinciden, capturando sinónimos y conceptos relacionados.
+
+## Recuperación de Información
+
+### Búsqueda Léxica con BM25
+
+BM25 (Best Matching 25) es un algoritmo de ranking que evalúa la relevancia de documentos basándose en la frecuencia de términos. Considera tanto la frecuencia del término en el documento (TF) como la frecuencia inversa del término en la colección (IDF).
+
+La fórmula de BM25 incorpora parámetros ajustables: k1 controla la saturación de la frecuencia de términos, mientras que b ajusta la normalización por longitud del documento. Valores típicos son k1=1.5 y b=0.75.
+
+BM25 es particularmente efectivo para consultas que contienen términos técnicos específicos o nombres propios, donde la coincidencia exacta de palabras es importante.
+
+### Búsqueda Semántica Vectorial
+
+La búsqueda vectorial utiliza embeddings para encontrar documentos semánticamente similares a la consulta. Se calcula la similitud coseno entre el embedding de la consulta y los embeddings de los chunks almacenados.
+
+Las bases de datos vectoriales especializadas, como FAISS, Pinecone o pgvector, optimizan estas búsquedas mediante estructuras de índice como HNSW (Hierarchical Navigable Small World) o IVF (Inverted File Index).
+
+La principal ventaja de la búsqueda vectorial es su capacidad para capturar similitud semántica más allá de coincidencias léxicas exactas.
+
+### Recuperación Híbrida
+
+La recuperación híbrida combina búsqueda léxica (BM25) y búsqueda vectorial para aprovechar las fortalezas de ambos enfoques. BM25 captura coincidencias exactas de términos, mientras que la búsqueda vectorial identifica similitud semántica.
+
+El método de fusión más común es Reciprocal Rank Fusion (RRF). RRF asigna un score a cada documento basándose en su posición en los rankings individuales. La fórmula es: score = suma(1 / (k + rank_i)) donde k típicamente es 60.
+
+Estudios empíricos muestran que la recuperación híbrida con RRF supera consistentemente a métodos individuales en tareas de recuperación de información.
+
+## Generación de Respuestas
+
+### Modelos de Lenguaje
+
+Los modelos de lenguaje grandes (LLMs) como GPT-4, Claude o Mistral son el componente de generación en sistemas RAG. Estos modelos han sido entrenados en vastas cantidades de texto y pueden generar respuestas coherentes basadas en contexto proporcionado.
+
+La calidad de las respuestas depende críticamente del prompt engineering. Un prompt bien diseñado instruye claramente al modelo sobre qué información usar, cómo estructurar la respuesta, y qué evitar.
+
+### El Problema de las Alucinaciones
+
+Las alucinaciones en LLMs se refieren a la generación de información que no está soportada por el contexto proporcionado o que es factualmente incorrecta. Este es uno de los desafíos más significativos en sistemas RAG.
+
+Las alucinaciones pueden surgir cuando el modelo completa información faltante con su conocimiento pre-entrenado, mezclando hechos reales con invenciones plausibles. Esto es especialmente problemático en aplicaciones que requieren alta precisión factual.
+
+### Estrategias de Anti-Alucinación
+
+Una estrategia efectiva es diseñar prompts que exijan citas explícitas. El prompt instruye al modelo a incluir referencias específicas al contexto después de cada afirmación, típicamente en formato [FUENTE: ID].
+
+Otra técnica es la verificación post-generación. Un sistema secundario revisa la respuesta generada, identificando afirmaciones y verificando que cada una esté soportada por el contexto proporcionado.
+
+El uso de temperaturas bajas (0.1-0.3) durante la generación reduce la creatividad del modelo, haciéndolo más conservador y menos propenso a inventar información.
+
+## Evaluación de Sistemas RAG
+
+### Métricas de Recuperación
+
+Las métricas tradicionales de recuperación incluyen Recall@K (proporción de documentos relevantes recuperados entre los top-K) y Precision@K (proporción de documentos relevantes entre los K recuperados).
+
+NDCG (Normalized Discounted Cumulative Gain) es una métrica más sofisticada que considera tanto la relevancia como la posición de los documentos recuperados en el ranking.
+
+### Métricas de Generación
+
+La fidelidad al contexto (faithfulness) mide qué proporción de la respuesta generada está soportada por el contexto proporcionado. Se calcula típicamente contando oraciones con y sin soporte en el contexto.
+
+La relevancia mide si la respuesta aborda efectivamente la pregunta del usuario. Puede evaluarse mediante juicio humano o métricas automáticas basadas en similitud semántica.
+
+RAGAS (Retrieval-Augmented Generation Assessment) es un framework que combina múltiples métricas para evaluación holística de sistemas RAG.
+
+### Análisis de Errores
+
+Un análisis sistemático de errores implica clasificar fallos del sistema: errores de recuperación (contexto relevante no recuperado), errores de generación (respuesta incorrecta dado buen contexto), y errores de integración (falta de uso efectivo del contexto recuperado).
+
+Cada categoría de error sugiere diferentes estrategias de mejora. Los errores de recuperación pueden abordarse mejorando embeddings o ajustando parámetros de búsqueda. Los errores de generación requieren mejor prompt engineering o modelos más capaces.
+
+## Optimizaciones Avanzadas
+
+### Re-ranking
+
+El re-ranking es un proceso de dos etapas donde un primer modelo recupera un conjunto amplio de candidatos, y un segundo modelo más sofisticado re-ordena estos candidatos para mejorar la precisión.
+
+Modelos de re-ranking especializados, como cross-encoders, evalúan explícitamente la relevancia de cada documento para la consulta, produciendo rankings de mayor calidad que métodos de recuperación iniciales.
+
+### Query Expansion
+
+La expansión de consultas enriquece la consulta original con términos relacionados o sinónimos antes de la recuperación. Esto puede mejorar el recall capturando documentos relevantes que usan vocabulario diferente.
+
+Técnicas incluyen expansión basada en sinónimos, pseudo-relevance feedback (usar términos de los top documentos iniciales), y query rewriting con LLMs.
+
+### Chunking Adaptativo
+
+El chunking adaptativo ajusta el tamaño de los chunks basándose en la densidad semántica del contenido. Secciones densas en información se dividen en chunks más pequeños, mientras que contenido menos denso puede formar chunks más grandes.
+
+Esta técnica optimiza el balance entre proporcionar contexto suficiente y mantener la precisión de la recuperación.
+
+## Casos de Uso
+
+### Asistentes de Documentación Técnica
+
+Los sistemas RAG son ideales para crear asistentes que responden preguntas sobre documentación técnica extensa. Pueden recuperar secciones relevantes de manuales y generar explicaciones claras con referencias específicas.
+
+### Sistemas de Q&A Empresariales
+
+Empresas usan RAG para construir sistemas de preguntas y respuestas sobre sus bases de conocimiento internas, políticas, y procedimientos. Esto democratiza el acceso a información crítica.
+
+### Investigación Académica
+
+Investigadores utilizan RAG para explorar literatura científica, identificando papers relevantes y sintetizando hallazgos de múltiples fuentes de manera eficiente.
+
+## Conclusiones y Futuro
+
+Los sistemas RAG representan un punto medio efectivo entre la pura generación de LLMs y sistemas de recuperación tradicionales. Combinan la capacidad de generación natural de los LLMs con el anclaje a información específica que proporciona la recuperación.
+
+Los desafíos actuales incluyen mejorar la calidad de recuperación, reducir alucinaciones, y optimizar el costo computacional. La investigación continúa en áreas como reasoning sobre múltiples documentos, integración de información contradictoria, y manejo de consultas complejas multi-hop.
+
+El futuro de RAG probablemente verá modelos más integrados donde recuperación y generación se co-entrenan, así como sistemas que pueden actualizar su conocimiento dinámicamente sin reentrenamiento completo del modelo base.
