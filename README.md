@@ -105,7 +105,7 @@ Ejecuta consultas RAG con recuperación híbrida y generación de respuestas.
   "faithfulnessScore": 0.85,
   "retrievedChunks": [...]
 }
-
+```
 ## Arquitectura del Sistema
 
 ```
